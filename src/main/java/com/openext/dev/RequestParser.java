@@ -57,6 +57,12 @@ public class RequestParser {
                             value = RequestUtils.getLong(req, paramName, defaultValue.isEmpty() ? 0L : Long.parseLong(defaultValue), isRequired);
                         } else if (field.getType().isEnum()) {
                             value = RequestUtils.getEnum(req, paramName, (Class<? extends Enum>) field.getType(), defaultValue, isRequired);
+                        }  else if (field.getType() == Boolean.class) {
+                            value = RequestUtils.getBoolean(req, paramName, defaultValue.isEmpty() ? false : Boolean.parseBoolean(defaultValue), isRequired);
+                        } else if (field.getType() == Double.class) {
+                            value = RequestUtils.getDouble(req, paramName, defaultValue.isEmpty() ? 0.0 : Double.parseDouble(defaultValue), isRequired);
+                        } else if (field.getType() == Float.class) {
+                            value = RequestUtils.getFloat(req, paramName, defaultValue.isEmpty() ? 0.0f : Float.parseFloat(defaultValue), isRequired);
                         } else {
                             throw new IllegalArgumentException("Unsupported field type: " + field.getType().getName());
                         }
@@ -111,6 +117,10 @@ public class RequestParser {
             return (T) Long.valueOf(value);
         } else if (type == Boolean.class) {
             return (T) Boolean.valueOf(value);
+        } else if (type == Double.class) {
+            return (T) Double.valueOf(value);
+        } else if (type == Float.class) {
+            return (T) Float.valueOf(value);
         } else if (type.isEnum()) {
             return (T) Enum.valueOf((Class<Enum>) type, value.toUpperCase());
         } else {

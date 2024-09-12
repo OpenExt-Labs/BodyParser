@@ -29,6 +29,30 @@ public class RequestUtils {
         return value;
     }
 
+    public static boolean getBoolean(HttpServletRequest req, String paramName, Boolean defaultValue, boolean isRequired) throws IllegalArgumentException {
+        Boolean value = HReqParam.getBoolean(req, paramName, defaultValue);
+        if (isRequired && value == defaultValue) {
+            throw new IllegalArgumentException(paramName + " is required");
+        }
+        return value;
+    }
+
+    public static double getDouble(HttpServletRequest req, String paramName, Double defaultValue, boolean isRequired) throws IllegalArgumentException {
+        Double value = HReqParam.getDouble(req, paramName, defaultValue);
+        if (isRequired && value == defaultValue) {
+            throw new IllegalArgumentException(paramName + " is required");
+        }
+        return value;
+    }
+
+    public static float getFloat(HttpServletRequest req, String paramName, Float defaultValue, boolean isRequired) throws IllegalArgumentException {
+        Float value = HReqParam.getFloat(req, paramName, defaultValue);
+        if (isRequired && value == defaultValue) {
+            throw new IllegalArgumentException(paramName + " is required");
+        }
+        return value;
+    }
+
     public static <E extends Enum<E>> E getEnum(HttpServletRequest req, String paramName, Class<E> enumClass, String defaultValue, boolean isRequired) throws IllegalArgumentException {
         String valueStr = HReqParam.getString(req, paramName, defaultValue);
         if (valueStr == null || valueStr.isEmpty()) {
