@@ -1,0 +1,24 @@
+plugins {
+    id 'java'
+}
+
+group = 'com.openext.dev'
+version = '1.0.2'
+
+repositories {
+    mavenCentral()
+}
+
+jar {
+    archiveBaseName.set('body-parser')
+}
+
+dependencies {
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    compileOnly 'javax.servlet:javax.servlet-api:4.0.1'
+}
+
+test {
+    useJUnitPlatform()
+}
