@@ -1,13 +1,17 @@
 package com.openext.dev;
 
-import com.openext.dev.annotations.RequestParam;
-import com.openext.dev.utils.RequestUtils;
+import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
-import java.lang.reflect.Field;
 
-import java.lang.reflect.*;
-import java.util.*;
+import com.openext.dev.annotations.RequestParam;
+import com.openext.dev.utils.RequestUtils;
 
 public class RequestParser {
 
@@ -23,7 +27,7 @@ public class RequestParser {
                     String paramName = requestParam.name();
                     boolean isRequired = requestParam.required();
                     String defaultValue = requestParam.defaultValue();
-                    String customMessage = requestParam.message();  // Add custom message here
+                    String customMessage = requestParam.message(); // Add custom message here
 
                     field.setAccessible(true);
 
@@ -38,7 +42,8 @@ public class RequestParser {
                                 Class<?> listType = (Class<?>) pt.getActualTypeArguments()[0];
 
                                 if (listType == String.class) {
-                                    String paramValue = RequestUtils.getString(req, paramName, defaultValue, isRequired);
+                                    String paramValue = RequestUtils.getString(req, paramName, defaultValue,
+                                            isRequired);
                                     if (paramValue != null && !paramValue.isEmpty()) {
                                         // Split the string and convert it to a list
                                         value = Arrays.asList(paramValue.split(","));
@@ -51,24 +56,35 @@ public class RequestParser {
                             }
                         } else if (field.getType() == String.class) {
                             value = RequestUtils.getString(req, paramName, defaultValue, isRequired);
+                        } else if (field.getType() == Integer.class) {
+                            value = RequestUtils.getInt(req, paramName,
+                                    defaultValue.isEmpty() ? null : Integer.parseInt(defaultValue), isRequired);
                         } else if (field.getType() == int.class) {
-                            value = RequestUtils.getInt(req, paramName, defaultValue.isEmpty() ? 0 : Integer.parseInt(defaultValue), isRequired);
-                        } else if (field.getType() == long.class) {
-                            value = RequestUtils.getLong(req, paramName, defaultValue.isEmpty() ? 0L : Long.parseLong(defaultValue), isRequired);
+                            value = RequestUtils.getInt(req, paramName,
+                                    defaultValue.isEmpty() ? 0 : Integer.parseInt(defaultValue), isRequired);
+                        }
+                        else if (field.getType() == Long.class) {
+                            value = RequestUtils.getLong(req, paramName,
+                                    defaultValue.isEmpty() ? null : Long.parseLong(defaultValue), isRequired);
                         } else if (field.getType().isEnum()) {
-                            value = RequestUtils.getEnum(req, paramName, (Class<? extends Enum>) field.getType(), defaultValue, isRequired);
-                        }  else if (field.getType() == Boolean.class) {
-                            value = RequestUtils.getBoolean(req, paramName, defaultValue.isEmpty() ? false : Boolean.parseBoolean(defaultValue), isRequired);
+                            value = RequestUtils.getEnum(req, paramName, (Class<? extends Enum>) field.getType(),
+                                    defaultValue, isRequired);
+                        } else if (field.getType() == Boolean.class) {
+                            value = RequestUtils.getBoolean(req, paramName,
+                                    defaultValue.isEmpty() ? null : Boolean.parseBoolean(defaultValue), isRequired);
                         } else if (field.getType() == Double.class) {
-                            value = RequestUtils.getDouble(req, paramName, defaultValue.isEmpty() ? 0.0 : Double.parseDouble(defaultValue), isRequired);
+                            value = RequestUtils.getDouble(req, paramName,
+                                    defaultValue.isEmpty() ? null : Double.parseDouble(defaultValue), isRequired);
                         } else if (field.getType() == Float.class) {
-                            value = RequestUtils.getFloat(req, paramName, defaultValue.isEmpty() ? 0.0f : Float.parseFloat(defaultValue), isRequired);
+                            value = RequestUtils.getFloat(req, paramName,
+                                    defaultValue.isEmpty() ? null : Float.parseFloat(defaultValue), isRequired);
                         } else {
                             throw new IllegalArgumentException("Unsupported field type: " + field.getType().getName());
                         }
                     } catch (IllegalArgumentException ex) {
                         // Use custom message if provided, otherwise default message
-                        String errorMessage = !customMessage.isEmpty() ? customMessage : "Invalid value for parameter: " + paramName;
+                        String errorMessage = !customMessage.isEmpty() ? customMessage
+                                : "Invalid value for parameter: " + paramName;
                         throw new IllegalArgumentException(errorMessage, ex);
                     }
 
@@ -82,7 +98,8 @@ public class RequestParser {
     }
 
     // New method to parse a parameter to a list
-    public static List<String> parseParamToList(HttpServletRequest req, String paramName, String defaultValue, boolean isRequired) {
+    public static List<String> parseParamToList(HttpServletRequest req, String paramName, String defaultValue,
+            boolean isRequired) {
         String paramValue = RequestUtils.getString(req, paramName, defaultValue, isRequired);
         if (paramValue != null && !paramValue.isEmpty()) {
             // Split the paramValue by comma and convert it into a list
@@ -92,7 +109,8 @@ public class RequestParser {
     }
 
     // Hàm parseParamToList nhận vào kiểu dữ liệu của List
-    public static <T> List<T> parseParamToList(HttpServletRequest req, String paramName, String defaultValue, boolean isRequired, Class<T> listType) {
+    public static <T> List<T> parseParamToList(HttpServletRequest req, String paramName, String defaultValue,
+            boolean isRequired, Class<T> listType) {
         String paramValue = RequestUtils.getString(req, paramName, defaultValue, isRequired);
         if (paramValue == null || paramValue.isEmpty()) {
             return Collections.emptyList();
@@ -126,5 +144,11 @@ public class RequestParser {
         } else {
             throw new IllegalArgumentException("Unsupported type: " + type.getName());
         }
+    }
+
+    public static void main(String[] args) {
+        Integer value = null;
+
+        System.err.println("Value: " + value);
     }
 }

@@ -20,6 +20,8 @@ dependencies {
 
     // Mockito
     testImplementation 'org.mockito:mockito-core:3.9.0'
+    // Loombok
+    testImplementation 'org.projectlombok:lombok:1.18.22'
 }
 
 test {
