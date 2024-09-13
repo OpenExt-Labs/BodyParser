@@ -99,7 +99,7 @@ public class RequestParser {
 
     // New method to parse a parameter to a list
     public static List<String> parseParamToList(HttpServletRequest req, String paramName, String defaultValue,
-            boolean isRequired) {
+                                                boolean isRequired) {
         String paramValue = RequestUtils.getString(req, paramName, defaultValue, isRequired);
         if (paramValue != null && !paramValue.isEmpty()) {
             // Split the paramValue by comma and convert it into a list
@@ -110,7 +110,7 @@ public class RequestParser {
 
     // Hàm parseParamToList nhận vào kiểu dữ liệu của List
     public static <T> List<T> parseParamToList(HttpServletRequest req, String paramName, String defaultValue,
-            boolean isRequired, Class<T> listType) {
+                                               boolean isRequired, Class<T> listType) {
         String paramValue = RequestUtils.getString(req, paramName, defaultValue, isRequired);
         if (paramValue == null || paramValue.isEmpty()) {
             return Collections.emptyList();

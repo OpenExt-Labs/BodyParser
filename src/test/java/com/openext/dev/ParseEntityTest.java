@@ -1,10 +1,10 @@
 package com.openext.dev;
 import com.openext.dev.annotations.RequestParam;
+import lombok.Getter;
+import lombok.Setter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import lombok.Getter;
-import lombok.Setter;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -12,24 +12,21 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+
 @Getter
 @Setter
 class UserInfo {
     @RequestParam(name = "name", required = true)
     private String name;
+
     @RequestParam(name = "age", required = true)
     private int age;
-    @RequestParam(name = "hobbies", required = true)
+
+    @RequestParam(name = "hobbies", required = true, message = "Hobbies are required")
     private List<String> hobbies;
 
-    @Override
-    public String toString() {
-        return "UserInfo{" +
-                "name='" + name + '\'' +
-                ", age=" + age +
-                ", hobbies=" + hobbies +
-                '}';
-    }
+    @RequestParam(name="favoriteNumbers")
+    private List<Integer> favoriteNumbers;
 }
 
 public class ParseEntityTest {
