@@ -4,7 +4,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -87,23 +86,6 @@ public class RequestParser {
             throw new IllegalArgumentException("Error parsing request parameters: " + ex.getMessage(), ex);
         }
         return instance;
-    }
-
-    /**
-     * Parse a request parameter to a list
-     * @param req The HttpServletRequest object
-     * @param paramName The name of the request parameter
-     * @param defaultValue The default value for the parameter
-     * @param isRequired Whether the parameter is required
-     * @return The list of values for the parameter
-     */
-    public static List<String> parseParamToList(HttpServletRequest req, String paramName, String defaultValue,
-            boolean isRequired) {
-        String paramValue = RequestUtils.getString(req, paramName, defaultValue, isRequired);
-        if (paramValue != null && !paramValue.isEmpty()) {
-            return Arrays.asList(paramValue.split(","));
-        }
-        return Collections.emptyList();
     }
 
     /***
