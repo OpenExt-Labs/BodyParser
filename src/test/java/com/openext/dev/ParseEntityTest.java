@@ -1,33 +1,14 @@
 package com.openext.dev;
-import com.openext.dev.annotations.RequestParam;
-import lombok.Getter;
-import lombok.Setter;
+
+import com.openext.dev.entity.UserInfo;
+import com.openext.dev.parser.RequestParser;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import javax.servlet.http.HttpServletRequest;
 
-import java.util.List;
-
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
-
-@Getter
-@Setter
-class UserInfo {
-    @RequestParam(name = "name", required = true)
-    private String name;
-
-    @RequestParam(name = "age", required = true)
-    private int age;
-
-    @RequestParam(name = "hobbies", required = true, message = "Hobbies are required")
-    private List<String> hobbies;
-
-    @RequestParam(name="favoriteNumbers")
-    private List<Integer> favoriteNumbers;
-}
 
 public class ParseEntityTest {
     private HttpServletRequest mockRequest;

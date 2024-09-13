@@ -1,4 +1,4 @@
-package com.openext.dev;
+package com.openext.dev.parser;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
@@ -40,19 +40,7 @@ public class RequestParser {
                             if (genericType instanceof ParameterizedType) {
                                 ParameterizedType pt = (ParameterizedType) genericType;
                                 Class<?> listType = (Class<?>) pt.getActualTypeArguments()[0];
-
-                                if (listType == String.class) {
-                                    String paramValue = RequestUtils.getString(req, paramName, defaultValue,
-                                            isRequired);
-                                    if (paramValue != null && !paramValue.isEmpty()) {
-                                        // Split the string and convert it to a list
-                                        value = Arrays.asList(paramValue.split(","));
-                                    } else {
-                                        value = Collections.emptyList(); // Return empty list if no values
-                                    }
-                                } else {
-                                    throw new IllegalArgumentException("Unsupported List type: " + listType.getName());
-                                }
+                                value = parseParamToList(req, paramName, defaultValue, isRequired, listType);
                             }
                         } else if (field.getType() == String.class) {
                             value = RequestUtils.getString(req, paramName, defaultValue, isRequired);
@@ -62,8 +50,7 @@ public class RequestParser {
                         } else if (field.getType() == int.class) {
                             value = RequestUtils.getInt(req, paramName,
                                     defaultValue.isEmpty() ? 0 : Integer.parseInt(defaultValue), isRequired);
-                        }
-                        else if (field.getType() == Long.class) {
+                        } else if (field.getType() == Long.class) {
                             value = RequestUtils.getLong(req, paramName,
                                     defaultValue.isEmpty() ? null : Long.parseLong(defaultValue), isRequired);
                         } else if (field.getType().isEnum()) {
@@ -99,7 +86,7 @@ public class RequestParser {
 
     // New method to parse a parameter to a list
     public static List<String> parseParamToList(HttpServletRequest req, String paramName, String defaultValue,
-                                                boolean isRequired) {
+            boolean isRequired) {
         String paramValue = RequestUtils.getString(req, paramName, defaultValue, isRequired);
         if (paramValue != null && !paramValue.isEmpty()) {
             // Split the paramValue by comma and convert it into a list
@@ -110,7 +97,7 @@ public class RequestParser {
 
     // Hàm parseParamToList nhận vào kiểu dữ liệu của List
     public static <T> List<T> parseParamToList(HttpServletRequest req, String paramName, String defaultValue,
-                                               boolean isRequired, Class<T> listType) {
+            boolean isRequired, Class<T> listType) {
         String paramValue = RequestUtils.getString(req, paramName, defaultValue, isRequired);
         if (paramValue == null || paramValue.isEmpty()) {
             return Collections.emptyList();

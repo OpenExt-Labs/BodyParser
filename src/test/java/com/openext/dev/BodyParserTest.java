@@ -1,8 +1,8 @@
 package com.openext.dev;
 
-import com.openext.dev.annotations.RequestParam;
-import lombok.Getter;
-import lombok.Setter;
+import com.openext.dev.entity.UserInfo2;
+import com.openext.dev.parser.BodyParser;
+import com.openext.dev.validation.MissingParameterException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -15,36 +15,9 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
-
-@Getter
-@Setter
-class UserInfo2 {
-    @RequestParam(name = "name", defaultValue = "Hello", required = true)
-    private String name;
-
-    @RequestParam(name = "age", required = true)
-    private int age;
-
-    @RequestParam(name = "hobbies", required = true, message = "Hobbies are required")
-    private List<String> hobbies;
-
-    @RequestParam(name="favoriteNumbers", defaultValue = "1,3,3")
-    private List<Integer> favoriteNumbers;
-
-    @Override
-    public String toString() {
-        return "UserInfo2{" +
-                "name='" + name + '\'' +
-                ", age=" + age +
-                ", hobbies=" + hobbies +
-                ", favoriteNumbers=" + favoriteNumbers +
-                '}';
-    }
-}
 
 public class BodyParserTest {
     private HttpServletRequest mockRequest;
@@ -60,7 +33,7 @@ public class BodyParserTest {
         when(mockRequest.getContentType()).thenReturn("application/json");
 
         // 2. Tạo dữ liệu giả lập cho JSON
-        String jsonData = "{\"age\": 25, \"hobbies\": [\"reading\", \"swimming\"], \"favoriteNumbers\": [1, 2, 3]}";
+        String jsonData = "{\"age\": 25, \"hobbies\": [\"reading\", \"swimming\"], \"favoriteNumbers\": [1, 3, 3]}";
 
         // 3. Mô phỏng ServletInputStream
         ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(jsonData.getBytes(StandardCharsets.UTF_8));
@@ -99,6 +72,32 @@ public class BodyParserTest {
         assertEquals(25, userInfo.getAge(), "Age should be 25");
         assertNotNull(userInfo.getHobbies(), "Hobbies should not be null");
         assertEquals(2, userInfo.getHobbies().size(), "Hobbies should contain 2 items");
-        assertTrue(userInfo.getHobbies().containsAll(Arrays.asList("reading", "swimming")), "Hobbies should contain 'reading' and 'swimming'");
+        assertTrue(userInfo.getHobbies().containsAll(Arrays.asList("reading", "swimming")),
+                "Hobbies should contain 'reading' and 'swimming'");
+    }
+
+    @Test
+    public void testParseUrlEncodedRequest() {
+        // 1. Mô phỏng Content-Type
+        when(mockRequest.getContentType()).thenReturn("application/x-www-form-urlencoded");
+
+        // 2. Mô phỏng dữ liệu giả lập cho form-urlencoded
+        when(mockRequest.getParameter("name")).thenReturn("Alice");
+        when(mockRequest.getParameter("age")).thenReturn("25");
+        when(mockRequest.getParameter("hobbies")).thenReturn("reading,swimming");
+
+        // 3. Khởi tạo BodyParser và thực hiện phân tích
+        BodyParser bodyParser = new BodyParser();
+
+        UnsupportedOperationException exception = assertThrows(
+                UnsupportedOperationException.class,
+                () -> {
+                    UserInfo2 userInfo = bodyParser.parse(mockRequest, UserInfo2.class);
+                },
+                "Unsupported type"
+
+        );
+        System.err.println(exception.getMessage());
+        assertTrue(exception.getMessage().contains("Unsupported Content-Type"));
     }
 }

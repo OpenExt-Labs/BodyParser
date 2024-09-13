@@ -1,7 +1,8 @@
-package com.openext.dev;
+package com.openext.dev.parser;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.openext.dev.annotations.RequestParam;
+import com.openext.dev.validation.MissingParameterException;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.BufferedReader;
@@ -53,8 +54,6 @@ public class BodyParser {
 
         if (contentType.contains("application/json")) {
             parsedData = parseJson(inputStream);
-        } else if (contentType.contains("application/x-www-form-urlencoded")) {
-            parsedData = parseUrlEncoded(inputStream);
         } else {
             throw new UnsupportedOperationException("Unsupported Content-Type: " + contentType);
         }
@@ -73,6 +72,7 @@ public class BodyParser {
                 String paramName = requestParam.name();
                 boolean required = requestParam.required();
                 String message = requestParam.message();
+                String defaultValue = requestParam.defaultValue();
 
                 String[] values = parsedData.get(paramName);
                 if (values == null || values.length == 0 || (values.length == 1 && values[0].isEmpty())) {
@@ -83,39 +83,93 @@ public class BodyParser {
                             missingParams.add(paramName);
                         }
                     }
+                    // Nếu không bắt buộc và có defaultValue, sử dụng defaultValue
+                    if (!required && !defaultValue.isEmpty()) {
+                        if (List.class.isAssignableFrom(field.getType())) {
+                            // Tách defaultValue bằng dấu phẩy và chuyển thành danh sách
+                            List<String> list = Arrays.asList(defaultValue.split(","));
+                            field.setAccessible(true);
+                            field.set(instance, list);
+                        } else {
+                            // Xử lý các kiểu dữ liệu khác dựa trên fieldType
+                            Object parsedDefaultValue = parseValue(defaultValue, field.getType(), paramName);
+                            field.setAccessible(true);
+                            field.set(instance, parsedDefaultValue);
+                        }
+                    }
                     continue;
                 }
 
                 field.setAccessible(true);
                 Class<?> fieldType = field.getType();
 
-                if (List.class.isAssignableFrom(fieldType)) {
-                    List<String> list = Arrays.asList(values);
-                    field.set(instance, list);
-                } else if (fieldType == int.class || fieldType == Integer.class) {
-                    field.set(instance, Integer.parseInt(values[0]));
-                } else if (fieldType == long.class || fieldType == Long.class) {
-                    field.set(instance, Long.parseLong(values[0]));
-                } else if (fieldType == double.class || fieldType == Double.class) {
-                    field.set(instance, Double.parseDouble(values[0]));
-                } else if (fieldType == boolean.class || fieldType == Boolean.class) {
-                    field.set(instance, Boolean.parseBoolean(values[0]));
-                } else if (fieldType == String.class) {
-                    field.set(instance, values[0]);
-                } else {
-                    // Đối với các loại phức tạp hơn, bạn có thể sử dụng ObjectMapper để ánh xạ
-                    String jsonValue = objectMapper.writeValueAsString(values[0]);
-                    Object complexObject = objectMapper.readValue(jsonValue, fieldType);
-                    field.set(instance, complexObject);
+                try {
+                    if (List.class.isAssignableFrom(fieldType)) {
+                        // Nếu là List<String>, chuyển đổi các giá trị thành danh sách
+                        List<String> list = Arrays.asList(values);
+                        field.set(instance, list);
+                    } else if (fieldType == int.class || fieldType == Integer.class) {
+                        field.set(instance, Integer.parseInt(values[0]));
+                    } else if (fieldType == long.class || fieldType == Long.class) {
+                        field.set(instance, Long.parseLong(values[0]));
+                    } else if (fieldType == double.class || fieldType == Double.class) {
+                        field.set(instance, Double.parseDouble(values[0]));
+                    } else if (fieldType == boolean.class || fieldType == Boolean.class) {
+                        field.set(instance, Boolean.parseBoolean(values[0]));
+                    } else if (fieldType == String.class) {
+                        field.set(instance, values[0]);
+                    } else if (fieldType.isEnum()) {
+                        field.set(instance, Enum.valueOf((Class<Enum>) fieldType, values[0].toUpperCase()));
+                    } else {
+                        // Đối với các loại phức tạp hơn, bạn có thể sử dụng ObjectMapper để ánh xạ
+                        String jsonValue = objectMapper.writeValueAsString(values[0]);
+                        Object complexObject = objectMapper.readValue(jsonValue, fieldType);
+                        field.set(instance, complexObject);
+                    }
+                } catch (Exception ex) {
+                    throw new IllegalArgumentException("Invalid value for parameter: " + paramName, ex);
                 }
             }
         }
+
 
         if (!missingParams.isEmpty()) {
             throw new MissingParameterException("Missing required parameters: " + String.join(", ", missingParams));
         }
 
         return instance;
+    }
+
+    /**
+     * Phương thức để chuyển đổi chuỗi thành kiểu dữ liệu tương ứng.
+     *
+     * @param value      Giá trị chuỗi cần chuyển đổi.
+     * @param type       Kiểu dữ liệu của trường.
+     * @param paramName  Tên parameter (dùng cho thông báo lỗi).
+     * @return Giá trị đã được chuyển đổi sang kiểu dữ liệu tương ứng.
+     */
+    private Object parseValue(String value, Class<?> type, String paramName) {
+        try {
+            if (type == int.class || type == Integer.class) {
+                return Integer.parseInt(value);
+            } else if (type == long.class || type == Long.class) {
+                return Long.parseLong(value);
+            } else if (type == double.class || type == Double.class) {
+                return Double.parseDouble(value);
+            } else if (type == boolean.class || type == Boolean.class) {
+                return Boolean.parseBoolean(value);
+            } else if (type == String.class) {
+                return value;
+            } else if (type.isEnum()) {
+                return Enum.valueOf((Class<Enum>) type, value.toUpperCase());
+            } else {
+                // Đối với các loại phức tạp hơn, sử dụng ObjectMapper để ánh xạ
+                String jsonValue = objectMapper.writeValueAsString(value);
+                return objectMapper.readValue(jsonValue, type);
+            }
+        } catch (Exception ex) {
+            throw new IllegalArgumentException("Invalid default value for parameter: " + paramName, ex);
+        }
     }
 
     /**
