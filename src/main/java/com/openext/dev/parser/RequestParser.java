@@ -15,6 +15,14 @@ import com.openext.dev.utils.RequestUtils;
 
 public class RequestParser {
 
+    /**
+     * Parse request parameters to an object
+     * @param req The HttpServletRequest object
+     * @param clazz The class of the object to parse the request parameters to
+     * @return The object with the request parameters set
+     * @param <T> The type of the object
+     * @throws IllegalArgumentException If there is an error parsing the request parameters
+     */
     public static <T> T parseRequest(HttpServletRequest req, Class<T> clazz) throws IllegalArgumentException {
         T instance = null;
         try {
@@ -27,15 +35,13 @@ public class RequestParser {
                     String paramName = requestParam.name();
                     boolean isRequired = requestParam.required();
                     String defaultValue = requestParam.defaultValue();
-                    String customMessage = requestParam.message(); // Add custom message here
+                    String customMessage = requestParam.message();
 
                     field.setAccessible(true);
 
                     Object value = null;
                     try {
-                        // Check if the field is a List type
                         if (List.class.isAssignableFrom(field.getType())) {
-                            // Handle List<String>
                             Type genericType = field.getGenericType();
                             if (genericType instanceof ParameterizedType) {
                                 ParameterizedType pt = (ParameterizedType) genericType;
@@ -69,7 +75,6 @@ public class RequestParser {
                             throw new IllegalArgumentException("Unsupported field type: " + field.getType().getName());
                         }
                     } catch (IllegalArgumentException ex) {
-                        // Use custom message if provided, otherwise default message
                         String errorMessage = !customMessage.isEmpty() ? customMessage
                                 : "Invalid value for parameter: " + paramName;
                         throw new IllegalArgumentException(errorMessage, ex);
@@ -84,18 +89,33 @@ public class RequestParser {
         return instance;
     }
 
-    // New method to parse a parameter to a list
+    /**
+     * Parse a request parameter to a list
+     * @param req The HttpServletRequest object
+     * @param paramName The name of the request parameter
+     * @param defaultValue The default value for the parameter
+     * @param isRequired Whether the parameter is required
+     * @return The list of values for the parameter
+     */
     public static List<String> parseParamToList(HttpServletRequest req, String paramName, String defaultValue,
             boolean isRequired) {
         String paramValue = RequestUtils.getString(req, paramName, defaultValue, isRequired);
         if (paramValue != null && !paramValue.isEmpty()) {
-            // Split the paramValue by comma and convert it into a list
             return Arrays.asList(paramValue.split(","));
         }
-        return Collections.emptyList(); // Return empty list if param is null or empty
+        return Collections.emptyList();
     }
 
-    // Hàm parseParamToList nhận vào kiểu dữ liệu của List
+    /***
+     * Parse a request parameter to a list of a specific type
+     * @param req The HttpServletRequest object
+     * @param paramName The name of the request parameter
+     * @param defaultValue The default value for the parameter
+     * @param isRequired Whether the parameter is required
+     * @param listType The type of the list
+     * @param <T> The type of the list
+     * @return The list of values for the parameter
+     */
     public static <T> List<T> parseParamToList(HttpServletRequest req, String paramName, String defaultValue,
             boolean isRequired, Class<T> listType) {
         String paramValue = RequestUtils.getString(req, paramName, defaultValue, isRequired);
@@ -131,11 +151,5 @@ public class RequestParser {
         } else {
             throw new IllegalArgumentException("Unsupported type: " + type.getName());
         }
-    }
-
-    public static void main(String[] args) {
-        Integer value = null;
-
-        System.err.println("Value: " + value);
     }
 }

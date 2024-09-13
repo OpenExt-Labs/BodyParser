@@ -22,15 +22,14 @@ public class BodyParser {
     }
 
     /**
-     * Hàm wrapper để phân tích dữ liệu từ HttpServletRequest và ánh xạ vào đối tượng tương ứng.
-     *
-     * @param request  Đối tượng HttpServletRequest.
-     * @param clazz    Lớp mục tiêu để ánh xạ dữ liệu.
-     * @param <T>      Kiểu đối tượng mong muốn.
-     * @return Đối tượng được phân tích và ánh xạ từ dữ liệu request.
-     * @throws IOException                Nếu có lỗi trong quá trình phân tích.
-     * @throws IllegalAccessException     Nếu có lỗi trong quá trình ánh xạ dữ liệu.
-     * @throws MissingParameterException  Nếu thiếu các tham số bắt buộc.
+     * Parse the request body and map it to an instance of the specified class
+     * @param request The HttpServletRequest object
+     * @param clazz The class of the object to parse the request body to
+     * @return The object with the request body set
+     * @param <T> The type of the object
+     * @throws IOException If there is an error reading the request body
+     * @throws IllegalAccessException If there is an error setting the field value
+     * @throws MissingParameterException If a required parameter is missing
      */
     public <T> T parse(HttpServletRequest request, Class<T> clazz) throws IOException, IllegalAccessException, MissingParameterException {
         String contentType = request.getContentType();
@@ -38,18 +37,7 @@ public class BodyParser {
         return parse(inputStream, clazz, contentType);
     }
 
-    /**
-     * Phân tích dữ liệu từ InputStream và ánh xạ vào đối tượng tương ứng dựa trên annotation @RequestParam.
-     *
-     * @param inputStream Dữ liệu đầu vào dưới dạng InputStream.
-     * @param clazz       Lớp mục tiêu để ánh xạ dữ liệu.
-     * @param <T>         Kiểu đối tượng mong muốn.
-     * @return Đối tượng được phân tích và ánh xạ từ dữ liệu request.
-     * @throws IOException            Nếu có lỗi trong quá trình phân tích.
-     * @throws IllegalAccessException Nếu có lỗi trong quá trình ánh xạ dữ liệu.
-     * @throws MissingParameterException Nếu thiếu các tham số bắt buộc.
-     */
-    public <T> T parse(InputStream inputStream, Class<T> clazz, String contentType) throws IOException, IllegalAccessException, MissingParameterException {
+    private <T> T parse(InputStream inputStream, Class<T> clazz, String contentType) throws IOException, IllegalAccessException, MissingParameterException {
         Map<String, String[]> parsedData;
 
         if (contentType.contains("application/json")) {
@@ -58,10 +46,8 @@ public class BodyParser {
             throw new UnsupportedOperationException("Unsupported Content-Type: " + contentType);
         }
 
-        // Tạo một instance của lớp mục tiêu
         T instance = createInstance(clazz);
 
-        // Lấy tất cả các trường của lớp
         Field[] fields = clazz.getDeclaredFields();
 
         List<String> missingParams = new ArrayList<>();
@@ -83,15 +69,12 @@ public class BodyParser {
                             missingParams.add(paramName);
                         }
                     }
-                    // Nếu không bắt buộc và có defaultValue, sử dụng defaultValue
                     if (!required && !defaultValue.isEmpty()) {
                         if (List.class.isAssignableFrom(field.getType())) {
-                            // Tách defaultValue bằng dấu phẩy và chuyển thành danh sách
                             List<String> list = Arrays.asList(defaultValue.split(","));
                             field.setAccessible(true);
                             field.set(instance, list);
                         } else {
-                            // Xử lý các kiểu dữ liệu khác dựa trên fieldType
                             Object parsedDefaultValue = parseValue(defaultValue, field.getType(), paramName);
                             field.setAccessible(true);
                             field.set(instance, parsedDefaultValue);
@@ -105,7 +88,6 @@ public class BodyParser {
 
                 try {
                     if (List.class.isAssignableFrom(fieldType)) {
-                        // Nếu là List<String>, chuyển đổi các giá trị thành danh sách
                         List<String> list = Arrays.asList(values);
                         field.set(instance, list);
                     } else if (fieldType == int.class || fieldType == Integer.class) {
@@ -121,7 +103,6 @@ public class BodyParser {
                     } else if (fieldType.isEnum()) {
                         field.set(instance, Enum.valueOf((Class<Enum>) fieldType, values[0].toUpperCase()));
                     } else {
-                        // Đối với các loại phức tạp hơn, bạn có thể sử dụng ObjectMapper để ánh xạ
                         String jsonValue = objectMapper.writeValueAsString(values[0]);
                         Object complexObject = objectMapper.readValue(jsonValue, fieldType);
                         field.set(instance, complexObject);
@@ -140,14 +121,6 @@ public class BodyParser {
         return instance;
     }
 
-    /**
-     * Phương thức để chuyển đổi chuỗi thành kiểu dữ liệu tương ứng.
-     *
-     * @param value      Giá trị chuỗi cần chuyển đổi.
-     * @param type       Kiểu dữ liệu của trường.
-     * @param paramName  Tên parameter (dùng cho thông báo lỗi).
-     * @return Giá trị đã được chuyển đổi sang kiểu dữ liệu tương ứng.
-     */
     private Object parseValue(String value, Class<?> type, String paramName) {
         try {
             if (type == int.class || type == Integer.class) {
@@ -163,7 +136,6 @@ public class BodyParser {
             } else if (type.isEnum()) {
                 return Enum.valueOf((Class<Enum>) type, value.toUpperCase());
             } else {
-                // Đối với các loại phức tạp hơn, sử dụng ObjectMapper để ánh xạ
                 String jsonValue = objectMapper.writeValueAsString(value);
                 return objectMapper.readValue(jsonValue, type);
             }
@@ -172,15 +144,7 @@ public class BodyParser {
         }
     }
 
-    /**
-     * Phân tích dữ liệu JSON từ InputStream.
-     *
-     * @param inputStream Dữ liệu đầu vào dưới dạng InputStream.
-     * @return Map chứa các cặp key-value từ dữ liệu JSON.
-     * @throws IOException Nếu có lỗi trong quá trình phân tích.
-     */
     private Map<String, String[]> parseJson(InputStream inputStream) throws IOException {
-        // Sử dụng ObjectMapper để chuyển JSON thành Map
         Map<String, Object> tempMap = objectMapper.readValue(inputStream, Map.class);
         Map<String, String[]> result = new HashMap<>();
 
@@ -198,13 +162,6 @@ public class BodyParser {
         return result;
     }
 
-    /**
-     * Phân tích dữ liệu URL-encoded từ InputStream.
-     *
-     * @param inputStream Dữ liệu đầu vào dưới dạng InputStream.
-     * @return Map chứa các cặp key-value từ dữ liệu URL-encoded.
-     * @throws IOException Nếu có lỗi trong quá trình đọc dữ liệu.
-     */
     private Map<String, String[]> parseUrlEncoded(InputStream inputStream) throws IOException {
         StringBuilder sb = new StringBuilder();
         BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
@@ -223,7 +180,6 @@ public class BodyParser {
             tempMap.computeIfAbsent(key, k -> new ArrayList<>()).add(value);
         }
 
-        // Chuyển List<String> thành String[]
         Map<String, String[]> result = new HashMap<>();
         for (Map.Entry<String, List<String>> entry : tempMap.entrySet()) {
             List<String> list = entry.getValue();
@@ -233,13 +189,6 @@ public class BodyParser {
         return result;
     }
 
-    /**
-     * Tạo một instance của lớp mục tiêu.
-     *
-     * @param clazz Lớp mục tiêu.
-     * @param <T>   Kiểu đối tượng.
-     * @return Một instance của lớp mục tiêu.
-     */
     private <T> T createInstance(Class<T> clazz) {
         try {
             return clazz.getDeclaredConstructor().newInstance();
