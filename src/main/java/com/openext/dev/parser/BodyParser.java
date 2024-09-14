@@ -3,6 +3,8 @@ package com.openext.dev.parser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.openext.dev.annotations.RequestParam;
 import com.openext.dev.validation.MissingParameterException;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.BufferedReader;
@@ -195,5 +197,23 @@ public class BodyParser {
         } catch (Exception e) {
             throw new RuntimeException("Cannot create instance of " + clazz.getName(), e);
         }
+    }
+
+    /**
+     * Parse the input stream to a JSONObject
+     * @param inputStream
+     * @return JSONObject
+     * @throws IOException
+     * @throws JSONException
+     */
+    public JSONObject parseToJSONObject(InputStream inputStream) throws IOException, JSONException {
+        StringBuilder sb = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line);
+            }
+        }
+        return new JSONObject(sb.toString());
     }
 }
