@@ -1,6 +1,6 @@
 # Request Parsing Framework
 
-Welcome to the **Request Parsing Framework**! This framework offers a streamlined approach to handling and validating HTTP requests in Java applications using custom annotations. By leveraging reflection and annotations, it simplifies the process of mapping request parameters to Java objects, supporting various data types, default values, and validation mechanisms.
+Welcome to the Request Parsing Framework! This framework offers a streamlined approach to handling and validating HTTP requests in **Java servlet-based applications** that do not utilize Spring Boot's extensive support tools. By leveraging reflection and custom annotations, it simplifies the process of mapping request parameters to Java objects, supporting various data types, default values, and validation mechanisms.
 
 ## Table of Contents
 
@@ -15,11 +15,7 @@ Welcome to the **Request Parsing Framework**! This framework offers a streamline
     - [Classes](#classes)
         - [`BodyParser`](#bodyparser)
         - [`RequestParser`](#requestparser)
-- [Usage](#usage)
-    - [Defining Data Classes](#defining-data-classes)
-    - [Parsing Requests](#parsing-requests)
 - [Testing](#testing)
-- [Example](#example)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -162,8 +158,6 @@ The `BodyParser` class is responsible for parsing HTTP request bodies and mappin
 - `parse(HttpServletRequest request, Class<T> clazz)`: Parses the request and populates an instance of the specified class.
 - `parseToJSONObject(InputStream inputStream)`: Reads the request body and parses it into a `JSONObject`.
 
-**Implementation:**
-
 #### Usage Example
 
 ```java
@@ -250,14 +244,13 @@ UserInfo{name='Alice', age=25, tags=[bac, java, python], scores=[80, 90, 85], ra
 
 #### `RequestParser`
 
-The `RequestParser` class provides static methods to parse HTTP request parameters into Java objects using the `@RequestParam` annotation. It offers additional flexibility and utility functions for handling different parameter types.
+The `RequestParser` class provides static methods to parse HTTP request parameters into Java objects using the `@RequestParam` annotation. It offers additional flexibility and utility functions for handling different parameter types. For handle body from `x-www-form-urlencoded`, use `RequestParser` class.
 
 **Key Methods:**
 
 - `parseRequest(HttpServletRequest req, Class<T> clazz)`: Parses the request parameters and maps them to an instance of the specified class.
 - `parseParamToList(HttpServletRequest req, String paramName, String defaultValue, boolean isRequired, Class<T> listType)`: Parses a specific parameter into a `List` of the desired type.
 
-**Implementation:**
 
 #### Usage Example
 
@@ -366,104 +359,6 @@ public class ExampleUsageWithRequestParser {
 
 ```
 UserInfo{name='Alice', age=25, tags=[bac, java, python], scores=[80, 90, 85], ratings=[4.5, 3.8, 5.0], metrics=[0.75, 0.85, 0.95]}
-```
-
-## Usage
-
-### Defining Data Classes
-
-Define your data classes with fields annotated using `@RequestParam` to specify how they should be populated from HTTP request parameters.
-
-**Example:**
-
-```java
-import com.openext.dev.annotations.RequestParam;
-import lombok.Getter;
-import lombok.Setter;
-import java.util.List;
-
-@Getter
-@Setter
-public class UserInfo {
-    @RequestParam(name = "name", required = true)
-    private String name;
-
-    @RequestParam(name = "age", required = true)
-    private int age;
-
-    @RequestParam(name = "tags", required = false, defaultValue = "bac,java,python", message = "Tags are required")
-    private List<String> tags;
-
-    @RequestParam(name = "scores", required = false, defaultValue = "80,90,85", message = "Scores are required")
-    private List<Integer> scores;
-
-    @RequestParam(name = "ratings", required = false, defaultValue = "4.5,3.8,5.0", message = "Ratings are required")
-    private List<Float> ratings;
-
-    @RequestParam(name = "metrics", required = false, defaultValue = "0.75,0.85,0.95", message = "Metrics are required")
-    private List<Double> metrics;
-
-    @Override
-    public String toString() {
-        return "UserInfo{" +
-                "name='" + name + '\'' +
-                ", age=" + age +
-                ", tags=" + tags +
-                ", scores=" + scores +
-                ", ratings=" + ratings +
-                ", metrics=" + metrics +
-                '}';
-    }
-}
-```
-
-### Parsing Requests
-
-Use the `BodyParser` or `RequestParser` class to parse incoming HTTP requests and map the parameters to your data classes.
-
-**Using `BodyParser`:**
-
-```java
-import javax.servlet.http.HttpServletRequest;
-import org.json.JSONObject;
-
-public class ExampleUsage {
-    private BodyParser bodyParser = new BodyParser();
-
-    public void handleRequest(HttpServletRequest request) {
-        try {
-            // Parse request parameters into UserInfo object
-            UserInfo userInfo = bodyParser.parse(request, UserInfo.class);
-            System.out.println(userInfo);
-
-            // Alternatively, parse the request body into a JSONObject
-            JSONObject jsonObject = bodyParser.parseToJSONObject(request.getInputStream());
-            System.out.println(jsonObject.toString(2)); // Pretty print JSON
-        } catch (MissingParameterException | IOException | IllegalAccessException | JSONException e) {
-            e.printStackTrace();
-            // Handle exceptions appropriately
-        }
-    }
-}
-```
-
-**Using `RequestParser`:**
-
-```java
-import javax.servlet.http.HttpServletRequest;
-
-public class ExampleUsageWithRequestParser {
-    public void handleRequest(HttpServletRequest request) {
-        try {
-            // Parse request parameters into UserInfo object using RequestParser
-            UserInfo userInfo = RequestParser.parseRequest(request, UserInfo.class);
-            System.out.println(userInfo);
-        } catch (IllegalArgumentException e) {
-            e.printStackTrace();
-            // Handle exceptions appropriately
-        }
-    }
-}
 ```
 
 ## Testing
@@ -885,135 +780,6 @@ public class RequestParserTest {
         assertTrue(exception.getMessage().contains("age"), "Exception message should mention missing 'age'");
     }
 }
-```
-
-## Example
-
-### Defining the `@RequestParam` Annotation
-
-```java
-package com.openext.dev.annotations;
-
-import java.lang.annotation.*;
-
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.FIELD)
-public @interface RequestParam {
-    String name();
-    boolean required() default false;
-    String defaultValue() default "";
-    String message() default "";
-}
-```
-
-### Defining the `UserInfo` Class
-
-```java
-package com.openext.dev;
-
-import com.openext.dev.annotations.RequestParam;
-import lombok.Getter;
-import lombok.Setter;
-import java.util.List;
-
-@Getter
-@Setter
-public class UserInfo {
-    @RequestParam(name = "name", required = true)
-    private String name;
-
-    @RequestParam(name = "age", required = true)
-    private int age;
-
-    @RequestParam(name = "tags", required = false, defaultValue = "bac,java,python", message = "Tags are required")
-    private List<String> tags;
-
-    @RequestParam(name = "scores", required = false, defaultValue = "80,90,85", message = "Scores are required")
-    private List<Integer> scores;
-
-    @RequestParam(name = "ratings", required = false, defaultValue = "4.5,3.8,5.0", message = "Ratings are required")
-    private List<Float> ratings;
-
-    @RequestParam(name = "metrics", required = false, defaultValue = "0.75,0.85,0.95", message = "Metrics are required")
-    private List<Double> metrics;
-
-    @Override
-    public String toString() {
-        return "UserInfo{" +
-                "name='" + name + '\'' +
-                ", age=" + age +
-                ", tags=" + tags +
-                ", scores=" + scores +
-                ", ratings=" + ratings +
-                ", metrics=" + metrics +
-                '}';
-    }
-}
-```
-
-### Parsing an HTTP Request with `BodyParser`
-
-```java
-import javax.servlet.http.HttpServletRequest;
-import org.json.JSONObject;
-
-public class ExampleUsage {
-    private BodyParser bodyParser = new BodyParser();
-
-    public void handleRequest(HttpServletRequest request) {
-        try {
-            // Parse request parameters into UserInfo object
-            UserInfo userInfo = bodyParser.parse(request, UserInfo.class);
-            System.out.println(userInfo);
-
-            // Alternatively, parse the request body into a JSONObject
-            JSONObject jsonObject = bodyParser.parseToJSONObject(request.getInputStream());
-            System.out.println(jsonObject.toString(2)); // Pretty print JSON
-        } catch (MissingParameterException | IOException | IllegalAccessException | JSONException e) {
-            e.printStackTrace();
-            // Handle exceptions appropriately
-        }
-    }
-}
-```
-
-**Output:**
-
-```
-UserInfo{name='Alice', age=25, tags=[bac, java, python], scores=[80, 90, 85], ratings=[4.5, 3.8, 5.0], metrics=[0.75, 0.85, 0.95]}
-{
-  "name": "Alice",
-  "age": 25,
-  "hobbies": [
-    "reading",
-    "swimming"
-  ]
-}
-```
-
-### Parsing an HTTP Request with `RequestParser`
-
-```java
-import javax.servlet.http.HttpServletRequest;
-
-public class ExampleUsageWithRequestParser {
-    public void handleRequest(HttpServletRequest request) {
-        try {
-            // Parse request parameters into UserInfo object using RequestParser
-            UserInfo userInfo = RequestParser.parseRequest(request, UserInfo.class);
-            System.out.println(userInfo);
-        } catch (IllegalArgumentException e) {
-            e.printStackTrace();
-            // Handle exceptions appropriately
-        }
-    }
-}
-```
-
-**Output:**
-
-```
-UserInfo{name='Alice', age=25, tags=[bac, java, python], scores=[80, 90, 85], ratings=[4.5, 3.8, 5.0], metrics=[0.75, 0.85, 0.95]}
 ```
 
 ## Contributing
